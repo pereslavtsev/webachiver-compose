@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  db:
+    container_name: "webarchiver-db"
+    build:
+      context: db
+    environment:
+        - POSTGRES_MULTIPLE_DATABASES=archiver,core,crawler
+        - POSTGRES_USER=webarchiver
+        - POSTGRES_PASSWORD=webarchiver
+    tty: true
+  redis:
+    image: "redis:6.2.6-alpine3.14"
+    tty: true
+  archiver:
+    image: "ghcr.io/pereslavtsev/webarchiver-ms-archiver:latest"
+    container_name: "ms-archiver"
+    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; make migrations-run && node dist/main'
+    environment:
+      - DATABASE_URL=postgres://webarchiver:webarchiver@db:5432/archiver
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "10002:10002"
+    tty: true
+  core:
+    image: "ghcr.io/pereslavtsev/webarchiver-ms-core:latest"
+    container_name: "ms-core"
+    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; make migrations-run && make seed-run && node dist/main'
+    environment:
+      - DATABASE_URL=postgres://webarchiver:webarchiver@db:5432/core
+      - REDIS_URL=redis://redis:6379
+      - BOT_USERNAME=${BOT_USERNAME}
+      - BOT_PASSWORD=${BOT_PASSWORD}
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "10001:10001"
+    tty: true
+  crawler:
+    image: "ghcr.io/pereslavtsev/webarchiver-ms-crawler:latest"
+    container_name: "ms-crawler"
+    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; make migrations-run && make seed-run && node dist/main'
+    environment:
+      - DATABASE_URL=postgres://webarchiver:webarchiver@db:5432/crawler
+      - BOT_USERNAME=${BOT_USERNAME}
+      - BOT_PASSWORD=${BOT_PASSWORD}
+    ports:
+      - "10003:10003"
+    depends_on:
+      - db
+    tty: true
