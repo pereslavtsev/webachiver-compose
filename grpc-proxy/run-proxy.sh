@@ -1,0 +1,1 @@
+while !</dev/tcp/archiver/10002 && !</dev/tcp/core/10001 && !</dev/tcp/crawler/10003; do sleep 1; done; nginx -g 'daemon off;'

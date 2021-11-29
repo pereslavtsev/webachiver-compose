@@ -1,6 +1,18 @@
 version: "3.9"
 
 services:
+  grpc-proxy:
+    container_name: "webarchiver-grpc-proxy"
+    build:
+      context: grpc-proxy
+    volumes:
+     - ./grpc-proxy/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - archiver
+      - core
+      - crawler
+    ports:
+      - "50051:50051"
   db:
     container_name: "webarchiver-db"
     build:
