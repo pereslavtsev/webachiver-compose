@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  local-grpc-proxy:
+    container_name: "webarchiver-local-grpc-proxy"
+    image: "nginx:1.21-alpine"
+    volumes:
+     - ./grpc-proxy/nginx-local.conf:/etc/nginx/nginx.conf
+    ports:
+      - "50051:50051"

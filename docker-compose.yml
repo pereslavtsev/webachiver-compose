@@ -1,6 +1,18 @@
 version: "3.9"
 
 services:
+  graphql:
+    container_name: "webarchiver-gql-gateway"
+    command: bash -c 'while !</dev/tcp/grpc-proxy/50051; do sleep 1; node dist/main'
+    depends_on:
+      - grpc-proxy
+      - redis
+    tty: true
+    environment:
+      - GRPC_URL=grpc-proxy:50051
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3001:3001"
   grpc-proxy:
     container_name: "webarchiver-grpc-proxy"
     build:
@@ -27,7 +39,7 @@ services:
     tty: true
   archiver:
     image: "ghcr.io/pereslavtsev/webarchiver-ms-archiver:latest"
-    container_name: "ms-archiver"
+    container_name: "webarchiver-ms-archiver"
     command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; make migrations-run && node dist/main'
     environment:
       - DATABASE_URL=postgres://webarchiver:webarchiver@db:5432/archiver
@@ -40,7 +52,7 @@ services:
     tty: true
   core:
     image: "ghcr.io/pereslavtsev/webarchiver-ms-core:latest"
-    container_name: "ms-core"
+    container_name: "webarchiver-ms-core"
     command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; make migrations-run && make seed-run && node dist/main'
     environment:
       - DATABASE_URL=postgres://webarchiver:webarchiver@db:5432/core
@@ -55,7 +67,7 @@ services:
     tty: true
   crawler:
     image: "ghcr.io/pereslavtsev/webarchiver-ms-crawler:latest"
-    container_name: "ms-crawler"
+    container_name: "webarchiver-ms-crawler"
     command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; make migrations-run && make seed-run && node dist/main'
     environment:
       - DATABASE_URL=postgres://webarchiver:webarchiver@db:5432/crawler
